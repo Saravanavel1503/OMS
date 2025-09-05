@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order and Inventory Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; min-height: 100vh; }
+    .container { max-width: 1100px; margin: auto; background: #fff; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,.1); overflow: hidden; }
+    .nav-link.active { font-weight: 600; color: #1f2937; border-bottom: 3px solid #1f2937; }
+    .tab-content.hidden { display: none; }
+    input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(59,130,246,.5); }
+  </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center">
+  <div class="container p-8 my-10">
+    <header class="text-center mb-6">
+      <h1 class="text-4xl font-bold text-gray-800">Order and Inventory Management System</h1>
+      <p class="text-gray-500 mt-2">Streamline your inventory, orders, and sales effortlessly.</p>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="flex justify-center mb-8">
+      <button id="create-order-tab" class="nav-link px-4 py-2 mx-2 rounded-t-lg transition-colors duration-200 active">Create Order</button>
+      <button id="manage-orders-tab" class="nav-link px-4 py-2 mx-2 rounded-t-lg transition-colors duration-200">Manage Orders</button>
+      <button id="manage-inventory-tab" class="nav-link px-4 py-2 mx-2 rounded-t-lg transition-colors duration-200">Manage Inventory</button>
+    </nav>
+
+    <!-- Create Order -->
+    <div id="create-order-content" class="tab-content">
+      <h2 class="text-2xl font-bold mb-4 text-gray-700">Create New Order</h2>
+      <form id="order-form" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="customer-name" class="block text-sm font-medium text-gray-700">Customer Name</label>
+            <input id="customer-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+          </div>
+          <div>
+            <label for="mobile-number" class="block text-sm font-medium text-gray-700">Mobile Number</label>
+            <input id="mobile-number" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+          </div>
+          <div>
+            <label for="order-date" class="block text-sm font-medium text-gray-700">Order Date</label>
+            <input type="date" id="order-date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+          </div>
+          <div>
+            <label for="planned-delivery-date" class="block text-sm font-medium text-gray-700">Planned Delivery Date</label>
+            <input type="date" id="planned-delivery-date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+          </div>
+          <div>
+            <label for="email-address" class="block text-sm font-medium text-gray-700">Email Address (Optional)</label>
+            <input type="email" id="email-address" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+          </div>
+          <div>
+            <label for="payment-method" class="block text-sm font-medium text-gray-700">Payment Method (Optional)</label>
+            <select id="payment-method" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+              <option value="">Select a method</option>
+              <option>Cash</option><option>Credit Card</option><option>UPI</option>
+            </select>
+          </div>
+		  <!-- GST (%) -->
+		  <div>
+		    <label for="gst-rate" class="block text-sm font-medium text-gray-700">GST (%)</label>
+		    <input type="number" id="gst-rate" step="0.01" min="0" value="5"
+		    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+		  </div>
+          <!-- Advance Received (shown if payment method selected) -->
+          <div id="advance-received-wrapper" class="hidden">
+            <label for="advance-received" class="block text-sm font-medium text-gray-700">Advance Received</label>
+            <input type="number" id="advance-received" min="0" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <input type="checkbox" id="personalization-required" class="rounded text-blue-600 focus:ring-blue-500">
+          <label for="personalization-required" class="text-sm font-medium text-gray-700">Personalization Required</label>
+        </div>
+        <div id="personalization-details-container" class="hidden">
+          <label for="personalization-details" class="block text-sm font-medium text-gray-700">Personalization Details</label>
+          <textarea id="personalization-details" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+        </div>
+      </form>
+
+      <!-- Items -->
+      <div class="mt-6 p-4 border rounded-md shadow-inner bg-gray-50">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Add Items to Order</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div class="md:col-span-2">
+            <label for="product-sku" class="block text-sm font-medium text-gray-700">Product SKU</label>
+            <select id="product-sku" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+              <option value="">Select a product</option>
+            </select>
+          </div>
+          <div>
+            <label for="product-quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+            <input type="number" id="product-quantity" min="1" value="1" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+          </div>
+          <button id="add-to-cart-btn" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">Add to Order</button>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Order Items</h3>
+        <table class="min-w-full divide-y divide-gray-200 rounded-md overflow-hidden">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="order-items-table-body" class="bg-white divide-y divide-gray-200"></tbody>
+        </table>
+        <div class="mt-4 p-4 bg-gray-100 rounded-md text-right font-bold text-gray-800">
+          Total: <span id="order-total">₹0.00</span>
+        </div>
+      </div>
+
+      <div class="mt-8 flex justify-end space-x-4">
+        <button id="place-order-btn" class="bg-green-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-600">Place Order</button>
+        <button id="update-order-btn" class="bg-yellow-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-yellow-600 hidden">Update Order</button>
+      </div>
+    </div>
+
+    <!-- Manage Orders -->
+    <div id="manage-orders-content" class="tab-content hidden">
+      <h2 class="text-2xl font-bold mb-4 text-gray-700">Manage Orders</h2>
+      <div class="overflow-x-auto rounded-lg shadow">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Planned Delivery</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="orders-table-body" class="bg-white divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Manage Inventory -->
+    <div id="manage-inventory-content" class="tab-content hidden">
+      <h2 class="text-2xl font-bold mb-4 text-gray-700">Manage Inventory</h2>
+      <div class="flex space-x-4 mb-6">
+        <button id="manage-categories-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md">Manage Categories</button>
+      </div>
+
+      <form id="inventory-form" class="bg-gray-50 p-6 rounded-lg shadow-inner mb-6">
+        <h3 id="inventory-form-title" class="text-lg font-semibold text-gray-700 mb-4">Add New Product</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="product-sku-input" class="block text-sm font-medium text-gray-700">SKU</label>
+            <input id="product-sku-input" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+          </div>
+          <div>
+            <label for="product-name" class="block text-sm font-medium text-gray-700">Product Name</label>
+            <input id="product-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+          </div>
+          <div>
+            <label for="product-category" class="block text-sm font-medium text-gray-700">Category</label>
+            <select id="product-category" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></select>
+          </div>
+          <div>
+            <label for="product-quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+            <input type="number" id="inventory-product-quantity" min="0" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+          </div>
+          <div>
+            <label for="product-price" class="block text-sm font-medium text-gray-700">Price</label>
+            <input type="number" id="product-price" step="0.01" min="0" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
+          </div>
+        </div>
+        <div class="mt-6 flex justify-end space-x-4">
+          <button type="submit" id="inventory-submit-btn" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">Add Product</button>
+          <button type="button" id="inventory-cancel-btn" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 hidden">Cancel</button>
+        </div>
+      </form>
+
+      <h3 class="text-xl font-bold mb-4 text-gray-700">Current Inventory</h3>
+      <div class="overflow-x-auto rounded-lg shadow">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-table-body" class="bg-white divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Modal -->
+  <div id="category-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+    <div class="relative bg-white rounded-lg shadow-xl p-8 m-4 max-w-sm w-full">
+      <button id="close-category-modal-btn" class="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-lg">&times;</button>
+      <h3 class="text-xl font-bold mb-4">Manage Categories</h3>
+      <form id="category-form" class="flex space-x-2 mb-4">
+        <input id="category-name-input" placeholder="New Category Name" required class="flex-grow px-3 py-2 border rounded-md">
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Add</button>
+      </form>
+      <ul id="category-list" class="space-y-2"></ul>
+    </div>
+  </div>
+
+  <!-- Invoice Modal -->
+  <div id="invoice-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+    <div class="relative bg-white rounded-lg shadow-xl p-8 m-4 max-w-3xl w-full">
+      <button id="close-invoice-modal-btn" class="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-lg">&times;</button>
+      <div id="invoice-content" class="p-6"></div>
+      <div class="flex justify-end mt-4">
+        <button id="generate-pdf-btn" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">
+          <i class="fas fa-file-pdf mr-2"></i>Generate PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Currency formatter (₹)
+      const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
+      const formatINR = n => inr.format(Number(n || 0));
+
+      // Tabs
+      const tabs = document.querySelectorAll('.nav-link');
+      const tabContents = document.querySelectorAll('.tab-content');
+
+      // Create Order refs
+      const orderForm = document.getElementById('order-form');
+      const customerNameInput = document.getElementById('customer-name');
+      const mobileNumberInput = document.getElementById('mobile-number');
+      const emailAddressInput = document.getElementById('email-address');
+      const orderDateInput = document.getElementById('order-date');
+      const plannedDeliveryDateInput = document.getElementById('planned-delivery-date');
+      const paymentMethodInput = document.getElementById('payment-method');
+      const advanceReceivedWrapper = document.getElementById('advance-received-wrapper');
+      const advanceReceivedInput = document.getElementById('advance-received');
+	  const gstRateInput = document.getElementById('gst-rate');
+
+      const personalizationRequiredCheckbox = document.getElementById('personalization-required');
+      const personalizationDetailsContainer = document.getElementById('personalization-details-container');
+      const personalizationDetailsTextarea = document.getElementById('personalization-details');
+
+      // Items
+      const productSkuSelect = document.getElementById('product-sku');
+      const productQuantityInput = document.getElementById('product-quantity');
+      const addToCartBtn = document.getElementById('add-to-cart-btn');
+      const orderItemsTableBody = document.getElementById('order-items-table-body');
+      const orderTotalSpan = document.getElementById('order-total');
+      const placeOrderBtn = document.getElementById('place-order-btn');
+      const updateOrderBtn = document.getElementById('update-order-btn');
+
+      // Manage Orders
+      const ordersTableBody = document.getElementById('orders-table-body');
+
+      // Inventory
+      const inventoryForm = document.getElementById('inventory-form');
+      const inventoryFormTitle = document.getElementById('inventory-form-title');
+      const productSkuInput = document.getElementById('product-sku-input');
+      const productNameInput = document.getElementById('product-name');
+      const productCategorySelect = document.getElementById('product-category');
+      const inventoryQtyInput = document.getElementById('inventory-product-quantity');
+      const productPriceInput = document.getElementById('product-price');
+      const inventorySubmitBtn = document.getElementById('inventory-submit-btn');
+      const inventoryCancelBtn = document.getElementById('inventory-cancel-btn');
+      const inventoryTableBody = document.getElementById('inventory-table-body');
+
+      // Category modal
+      const manageCategoriesBtn = document.getElementById('manage-categories-btn');
+      const categoryModal = document.getElementById('category-modal');
+      const closeCategoryModalBtn = document.getElementById('close-category-modal-btn');
+      const categoryForm = document.getElementById('category-form');
+      const categoryNameInput = document.getElementById('category-name-input');
+      const categoryList = document.getElementById('category-list');
+
+      // Invoice modal
+      const invoiceModal = document.getElementById('invoice-modal');
+      const closeInvoiceModalBtn = document.getElementById('close-invoice-modal-btn');
+      const invoiceContent = document.getElementById('invoice-content');
+      const generatePdfBtn = document.getElementById('generate-pdf-btn');
+
+
+      let cart = [];
+      let allProducts = [];
+      let currentOrderId = null;
+
+      function showToast(message, isError = false) {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.className = `p-4 rounded-md shadow-lg text-white mb-3 transition-transform transform-gpu ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+        document.getElementById('toast-container').appendChild(toast);
+        setTimeout(() => {
+          toast.classList.add('translate-x-full', 'opacity-0');
+          toast.addEventListener('transitionend', () => toast.remove());
+        }, 3000);
+      }
+
+      function switchTab(tabId) {
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.add('hidden'));
+        document.getElementById(`${tabId}-tab`).classList.add('active');
+        document.getElementById(`${tabId}-content`).classList.remove('hidden');
+        if (tabId === 'manage-orders') fetchOrders();
+        else if (tabId === 'manage-inventory') { fetchProducts(); fetchCategories(); }
+      }
+	  
+	  function getGstRateDecimal() {
+		const v = parseFloat(gstRateInput?.value ?? '0');
+		return isNaN(v) ? 0 : v / 100;
+	  }
+
+	  function updateOrderTotal() {
+	    const subtotal = cart.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+	    const gstAmount = subtotal * getGstRateDecimal();
+	    const total = subtotal + gstAmount;
+	    orderTotalSpan.textContent = formatINR(total);
+	  }
+
+
+      function displayCartItems() {
+        orderItemsTableBody.innerHTML = '';
+        cart.forEach((item, index) => {
+          const row = document.createElement('tr');
+          row.className = 'bg-white border-b';
+          row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap">${item.product_name}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${item.sku}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${item.quantity}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${formatINR(item.price)}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${formatINR(item.quantity * item.price)}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <button class="remove-item text-red-500 hover:text-red-700" data-index="${index}">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          `;
+          orderItemsTableBody.appendChild(row);
+        });
+        updateOrderTotal();
+      }
+
+      function resetOrderForm() {
+        orderForm.reset();
+        cart = [];
+        displayCartItems();
+        currentOrderId = null;
+        placeOrderBtn.classList.remove('hidden');
+        updateOrderBtn.classList.add('hidden');
+        personalizationDetailsContainer.classList.add('hidden');
+        advanceReceivedWrapper.classList.add('hidden');
+        advanceReceivedInput.value = '';
+      }
+
+      function populateProductDropdown(products) {
+        productSkuSelect.innerHTML = '<option value="">Select a product</option>';
+        allProducts = products;
+        products.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.sku;
+          opt.textContent = `${p.name} (SKU: ${p.sku}, Price: ${formatINR(p.price)})`;
+          productSkuSelect.appendChild(opt);
+        });
+      }
+
+      function populateInventoryTable(products) {
+        inventoryTableBody.innerHTML = '';
+        products.forEach(p => {
+          const row = document.createElement('tr');
+          row.className = 'bg-white border-b';
+          row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap">${p.sku}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${p.name}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${p.category}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${p.quantity}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${formatINR(p.price)}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <button class="edit-product-btn text-blue-500 hover:text-blue-700 mr-2" data-sku="${p.sku}">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="delete-product-btn text-red-500 hover:text-red-700" data-sku="${p.sku}">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          `;
+          inventoryTableBody.appendChild(row);
+        });
+      }
+
+      function populateCategoriesList(categories) {
+        const ul = document.getElementById('category-list');
+        ul.innerHTML = '';
+        categories.forEach(c => {
+          const li = document.createElement('li');
+          li.className = 'flex items-center justify-between p-2 bg-gray-100 rounded-md';
+          li.innerHTML = `
+            <span>${c}</span>
+            <button class="delete-category-btn text-red-500 hover:text-red-700" data-name="${c}">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          `;
+          ul.appendChild(li);
+        });
+      }
+
+      function populateOrderDetailsForEdit(order) {
+        customerNameInput.value = order.customerName;
+        mobileNumberInput.value = order.mobileNumber;
+        emailAddressInput.value = order.emailAddress || '';
+        orderDateInput.value = order.orderDate;
+        plannedDeliveryDateInput.value = order.plannedDeliveryDate || '';
+        paymentMethodInput.value = order.paymentMethod || '';
+        if (order.paymentMethod) {
+          advanceReceivedWrapper.classList.remove('hidden');
+          advanceReceivedInput.value = order.advanceReceived ?? 0;
+        } else {
+          advanceReceivedWrapper.classList.add('hidden');
+          advanceReceivedInput.value = '';
+        }
+        personalizationRequiredCheckbox.checked = !!order.personalizationRequired;
+        if (order.personalizationRequired) {
+          personalizationDetailsContainer.classList.remove('hidden');
+          personalizationDetailsTextarea.value = order.personalizationDetails || '';
+        } else {
+          personalizationDetailsContainer.classList.add('hidden');
+          personalizationDetailsTextarea.value = '';
+        }
+		if (typeof order.gstRate === 'number') {
+		  gstRateInput.value = (order.gstRate * 100).toString();
+		}
+        cart = order.items || [];
+        displayCartItems();
+        currentOrderId = order.id;
+        placeOrderBtn.classList.add('hidden');
+        updateOrderBtn.classList.remove('hidden');
+        switchTab('create-order');
+      }
+
+      // API
+      async function fetchProducts() {
+        try {
+          const r = await fetch('http://localhost:5000/api/products');
+          populateProductDropdown(await r.json());
+          populateInventoryTable(await (await fetch('http://localhost:5000/api/products')).json());
+        } catch { showToast('Failed to load products.', true); }
+      }
+
+      async function fetchCategories() {
+        try {
+          const r = await fetch('http://localhost:5000/api/categories');
+          const cats = await r.json();
+          productCategorySelect.innerHTML = '';
+          cats.forEach(c => {
+            const o = document.createElement('option'); o.value = c; o.textContent = c; productCategorySelect.appendChild(o);
+          });
+          populateCategoriesList(cats);
+        } catch { showToast('Failed to load categories.', true); }
+      }
+
+      async function fetchOrders() {
+        try {
+          const r = await fetch('http://localhost:5000/api/orders');
+          const orders = await r.json();
+          ordersTableBody.innerHTML = '';
+          orders.forEach(o => {
+            const tr = document.createElement('tr');
+            tr.className = 'bg-white border-b';
+            tr.innerHTML = `
+              <td class="px-6 py-4 whitespace-nowrap">${o.id}</td>
+              <td class="px-6 py-4 whitespace-nowrap">${o.customerName}</td>
+              <td class="px-6 py-4 whitespace-nowrap">${o.orderDate}</td>
+              <td class="px-6 py-4 whitespace-nowrap">${o.plannedDeliveryDate || 'N/A'}</td>
+              <td class="px-6 py-4 whitespace-nowrap">${formatINR(o.totalCost)}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <button class="view-order-btn text-green-500 hover:text-green-700 mr-2" data-order-id="${o.id}">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="edit-order-btn text-blue-500 hover:text-blue-700 mr-2" data-order-id="${o.id}">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="delete-order-btn text-red-500 hover:text-red-700" data-order-id="${o.id}">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </td>
+            `;
+            ordersTableBody.appendChild(tr);
+          });
+        } catch { showToast('Failed to load orders.', true); }
+      }
+
+      // Handlers
+      function handleTabClick(e){ switchTab(e.target.id.replace('-tab','')); }
+
+      function handleAddToCart(){
+        const sku = productSkuSelect.value;
+        const quantity = parseInt(productQuantityInput.value, 10);
+        if(!sku || quantity<=0){ showToast('Select a product and valid quantity.', true); return; }
+        const p = allProducts.find(x => x.sku === sku);
+        if(!p){ showToast('Invalid product.', true); return; }
+        const ex = cart.find(i => i.sku === sku);
+        if (ex) ex.quantity += quantity;
+        else cart.push({ sku: p.sku, product_name: p.name, quantity, price: p.price });
+        displayCartItems();
+        showToast(`${p.name} added to order!`);
+      }
+
+      async function handlePlaceOrder(e){
+        e.preventDefault();
+        const orderData = collectOrderPayload();
+        if(!orderData) return;
+        try{
+          const res = await fetch('http://localhost:5000/api/orders', {
+            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(orderData)
+          });
+          const out = await res.json();
+          if(res.ok){ showToast(`Order ${out.order_id} placed successfully!`); resetOrderForm(); }
+          else showToast(`Error: ${out.error}`, true);
+        }catch{ showToast('Failed to place order. Check server connection.', true); }
+      }
+
+      async function handleUpdateOrder(e){
+        e.preventDefault();
+        if(!currentOrderId) return;
+        const orderData = collectOrderPayload();
+        if(!orderData) return;
+        try{
+          const res = await fetch(`http://localhost:5000/api/orders/${currentOrderId}`, {
+            method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(orderData)
+          });
+          const out = await res.json();
+          if(res.ok){ showToast(`Order ${currentOrderId} updated successfully!`); resetOrderForm(); switchTab('manage-orders'); }
+          else showToast(`Error: ${out.error}`, true);
+        }catch{ showToast('Failed to update order.', true); }
+      }
+
+      function collectOrderPayload(){
+        const customerName = customerNameInput.value.trim();
+        const mobileNumber = mobileNumberInput.value.trim();
+        const emailAddress = emailAddressInput.value.trim();
+        const orderDate = orderDateInput.value;
+        const plannedDeliveryDate = plannedDeliveryDateInput.value || '';
+        const paymentMethod = paymentMethodInput.value || '';
+        const advanceReceived = parseFloat(advanceReceivedInput.value || 0);
+        const personalizationRequired = personalizationRequiredCheckbox.checked;
+        const personalizationDetails = personalizationDetailsTextarea.value;
+
+        if (cart.length === 0){ showToast('Add at least one item to the order.', true); return null; }
+        if (!customerName || !mobileNumber || !orderDate){ showToast('Fill all required customer details.', true); return null; }
+
+        return { customerName, mobileNumber, emailAddress, orderDate, plannedDeliveryDate,
+                 paymentMethod, advanceReceived, personalizationRequired, personalizationDetails, gstRate: getGstRateDecimal(), items: cart };
+      }
+
+      async function handleDeleteOrder(orderId){
+        if(!confirm(`Delete order ${orderId}?`)) return;
+        try{
+          const r = await fetch(`http://localhost:5000/api/orders/${orderId}`, { method:'DELETE' });
+          const j = await r.json();
+          if(r.ok){ showToast(j.message); fetchOrders(); } else showToast(`Error: ${j.error}`, true);
+        }catch{ showToast('Failed to delete order.', true); }
+      }
+
+      async function handleViewOrder(orderId){
+        try{
+          const r = await fetch(`http://localhost:5000/api/orders/${orderId}`);
+          const order = await r.json();
+          if(r.ok){ displayInvoice(order); invoiceModal.classList.remove('hidden'); }
+          else showToast(`Error: ${order.error}`, true);
+        }catch{ showToast('Failed to view order details.', true); }
+      }
+
+      function displayInvoice(order){
+        const rows = (order.items||[]).map(item => `
+          <tr class="border-b">
+            <td class="py-2 text-left">${item.product_name}</td>
+            <td class="py-2 text-center">${item.quantity}</td>
+            <td class="py-2 text-right">${formatINR(item.price)}</td>
+            <td class="py-2 text-right">${formatINR(item.quantity * item.price)}</td>
+          </tr>
+        `).join('');
+
+        const gstRate = (typeof order.gstRate === 'number') ? order.gstRate : getGstRateDecimal();
+        const subtotal = (order.items||[]).reduce((s,i)=>s+i.quantity*i.price,0);
+        const gstAmount = subtotal * gstRate;
+        const total = subtotal + gstAmount;
+        const advance = parseFloat(order.advanceReceived || 0);
+        const balance = Math.max(total - advance, 0);
+
+        invoiceContent.innerHTML = `
+          <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold">Sales Invoice</h2>
+            <p class="text-gray-500">Invoice ID: ${order.id}</p>
+          </div>
+          <div class="flex justify-between mb-4 text-sm">
+            <div>
+              <p><strong>Customer:</strong> ${order.customerName}</p>
+              <p><strong>Mobile:</strong> ${order.mobileNumber}</p>
+              ${order.emailAddress ? `<p><strong>Email:</strong> ${order.emailAddress}</p>` : ''}
+            </div>
+            <div class="text-right">
+              <p><strong>Order Date:</strong> ${order.orderDate}</p>
+              <p><strong>Planned Delivery:</strong> ${order.plannedDeliveryDate || 'N/A'}</p>
+            </div>
+          </div>
+          <table class="w-full text-sm mb-4">
+            <thead>
+              <tr class="border-b-2 border-gray-300">
+                <th class="py-2 text-left">Product</th>
+                <th class="py-2 text-center">Qty</th>
+                <th class="py-2 text-right">Unit Price</th>
+                <th class="py-2 text-right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="text-right text-sm space-y-1">
+            <p><strong>Subtotal:</strong> ${formatINR(subtotal)}</p>
+            <p><strong>GST (${(gstRate*100)}%):</strong> ${formatINR(gstAmount)}</p>
+            <p class="text-lg font-bold">Total: ${formatINR(total)}</p>
+            ${order.paymentMethod ? `<p><strong>Payment Method:</strong> ${order.paymentMethod}</p>` : ''}
+            ${advance > 0 ? `<p class="text-green-600"><strong>Advance Received:</strong> ${formatINR(advance)}</p>` : ''}
+            <p class="text-blue-700 font-semibold"><strong>Balance Due:</strong> ${formatINR(balance)}</p>
+            ${order.personalizationRequired ? `<div class="mt-4 text-left"><strong>Personalization Details:</strong><p>${order.personalizationDetails || ''}</p></div>` : ''}
+          </div>
+        `;
+      }
+
+      async function handleInvoiceGeneration(){
+        const btn = document.querySelector('.view-order-btn');
+        const orderId = btn ? btn.getAttribute('data-order-id') : null;
+        if(!orderId){ showToast('No order selected to generate a PDF.', true); return; }
+        try{
+          const res = await fetch(`http://localhost:5000/api/invoice_pdf/${orderId}`);
+          if(!res.ok) throw new Error('PDF generation failed.');
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = `invoice_${orderId}.pdf`; a.style.display = 'none';
+          document.body.appendChild(a); a.click(); URL.revokeObjectURL(url);
+          showToast('Invoice PDF generated successfully!');
+        }catch{ showToast('Failed to generate PDF.', true); }
+      }
+
+      async function handleManageCategories(){
+        await fetchCategories();
+        categoryModal.classList.remove('hidden');
+      }
+
+      async function handleAddCategory(e){
+        e.preventDefault();
+        const name = categoryNameInput.value.trim();
+        if(!name) return;
+        try{
+          const r = await fetch('http://localhost:5000/api/categories', {
+            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name })
+          });
+          const j = await r.json();
+          if(r.ok){ showToast(j.message); categoryNameInput.value=''; fetchCategories(); }
+          else showToast(`Error: ${j.message}`, true);
+        }catch{ showToast('Failed to add category.', true); }
+      }
+
+      async function handleDeleteCategory(name){
+        if(!confirm(`Delete category "${name}"? This may affect products.`)) return;
+        try{
+          const r = await fetch(`http://localhost:5000/api/categories/${name}`, { method:'DELETE' });
+          const j = await r.json();
+          if(r.ok){ showToast(j.message); fetchCategories(); fetchProducts(); }
+          else showToast(`Error: ${j.message}`, true);
+        }catch{ showToast('Failed to delete category.', true); }
+      }
+
+      // Events
+      tabs.forEach(tab => tab.addEventListener('click', handleTabClick));
+      addToCartBtn.addEventListener('click', handleAddToCart);
+      placeOrderBtn.addEventListener('click', handlePlaceOrder);
+      updateOrderBtn.addEventListener('click', handleUpdateOrder);
+	  gstRateInput.addEventListener('input', updateOrderTotal);
+      orderItemsTableBody.addEventListener('click', (e) => {
+        const btn = e.target.closest('.remove-item');
+        if(!btn) return;
+        cart.splice(parseInt(btn.dataset.index,10),1);
+        displayCartItems();
+      });
+
+      // Show/hide personalization and advance
+      personalizationRequiredCheckbox.addEventListener('change', (e) => {
+        personalizationDetailsContainer.classList.toggle('hidden', !e.target.checked);
+      });
+      paymentMethodInput.addEventListener('change', () => {
+        const has = !!paymentMethodInput.value;
+        advanceReceivedWrapper.classList.toggle('hidden', !has);
+        if(!has) advanceReceivedInput.value = '';
+      });
+
+      // Manage orders table actions
+      ordersTableBody.addEventListener('click', async (e) => {
+        const viewBtn = e.target.closest('.view-order-btn');
+        const editBtn = e.target.closest('.edit-order-btn');
+        const deleteBtn = e.target.closest('.delete-order-btn');
+        if(viewBtn) await handleViewOrder(viewBtn.dataset.orderId);
+        else if(editBtn){
+          try{
+            const r = await fetch(`http://localhost:5000/api/orders/${editBtn.dataset.orderId}`);
+            const order = await r.json();
+            if(r.ok) populateOrderDetailsForEdit(order);
+            else showToast(`Error: ${order.error}`, true);
+          }catch{ showToast('Failed to load order for edit.', true); }
+        } else if(deleteBtn){ handleDeleteOrder(deleteBtn.dataset.orderId); }
+      });
+
+      // Inventory form
+      inventoryForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const sku = productSkuInput.value.trim();
+        const name = productNameInput.value.trim();
+        const category = productCategorySelect.value;
+        const quantity = parseInt(inventoryQtyInput.value, 10);
+        const price = parseFloat(productPriceInput.value);
+        const product = { sku, name, category, quantity, price };
+        const isUpdate = inventorySubmitBtn.textContent === 'Update Product';
+        try{
+          const r = await fetch(`http://localhost:5000/api/products${isUpdate ? '/' + sku : ''}`, {
+            method: isUpdate ? 'PUT':'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(product)
+          });
+          const j = await r.json();
+          if(r.ok){
+            showToast(j.message);
+            inventoryForm.reset();
+            productSkuInput.disabled = false;
+            inventoryFormTitle.textContent = 'Add New Product';
+            inventorySubmitBtn.textContent = 'Add Product';
+            inventoryCancelBtn.classList.add('hidden');
+            fetchProducts();
+          } else showToast(`Error: ${j.message}`, true);
+        }catch{ showToast('Failed to connect to the server.', true); }
+      });
+      inventoryCancelBtn.addEventListener('click', () => {
+        inventoryForm.reset();
+        productSkuInput.disabled = false;
+        inventoryFormTitle.textContent = 'Add New Product';
+        inventorySubmitBtn.textContent = 'Add Product';
+        inventoryCancelBtn.classList.add('hidden');
+      });
+	  
+		// Handle clicks on Edit / Delete in the inventory table (event delegation)
+		inventoryTableBody.addEventListener('click', async (e) => {
+		  const editBtn = e.target.closest('.edit-product-btn');
+		  const deleteBtn = e.target.closest('.delete-product-btn');
+
+		  // EDIT product -> populate the form for editing
+		  if (editBtn) {
+			const sku = editBtn.dataset.sku;
+			// ensure we have the latest products in allProducts
+			if (!allProducts.length) {
+			  try {
+				const r = await fetch('http://localhost:5000/api/products');
+				allProducts = await r.json();
+			  } catch { /* ignore; will fall back to current */ }
+			}
+			const product = allProducts.find(p => p.sku === sku);
+			if (!product) { showToast('Product not found in list. Refreshing...', true); await fetchProducts(); return; }
+
+			// Switch form to "edit" mode
+			inventoryFormTitle.textContent = 'Edit Product';
+			inventorySubmitBtn.textContent = 'Update Product';
+			productSkuInput.value = product.sku;
+			productSkuInput.disabled = true;       // important so PUT goes to /api/products/<sku>
+			productNameInput.value = product.name;
+			productCategorySelect.value = product.category;
+			inventoryQtyInput.value = product.quantity;
+			productPriceInput.value = product.price;
+			inventoryCancelBtn.classList.remove('hidden');
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+			return;
+		  }
+
+		  // DELETE product -> call backend and refresh
+		  if (deleteBtn) {
+			const sku = deleteBtn.dataset.sku;
+			if (!confirm(`Delete product with SKU: ${sku}?`)) return;
+			try {
+			  const r = await fetch(`http://localhost:5000/api/products/${sku}`, { method: 'DELETE' });
+			  const result = await r.json();
+			  if (r.ok) {
+				showToast(result.message);
+				await fetchProducts(); // refresh list + dropdown
+			  } else {
+				showToast(`Error: ${result.message || result.error || 'Failed to delete product.'}`, true);
+			  }
+			} catch {
+			  showToast('Failed to delete product. Server unreachable.', true);
+			}
+		  }
+		});
+
+      // Category modal events
+      manageCategoriesBtn.addEventListener('click', handleManageCategories);
+      closeCategoryModalBtn.addEventListener('click', () => categoryModal.classList.add('hidden'));
+      categoryForm.addEventListener('submit', handleAddCategory);
+      categoryList.addEventListener('click', (e) => {
+        const del = e.target.closest('.delete-category-btn');
+        if(del) handleDeleteCategory(del.dataset.name);
+      });
+
+      // Invoice modal
+      closeInvoiceModalBtn.addEventListener('click', () => invoiceModal.classList.add('hidden'));
+      generatePdfBtn.addEventListener('click', handleInvoiceGeneration);
+
+      // Init
+      switchTab('create-order');
+      fetchProducts();
+      fetchCategories();
+    });
+  </script>
+</body>
+</html>
